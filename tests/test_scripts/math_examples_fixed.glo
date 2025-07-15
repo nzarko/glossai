@@ -1,0 +1,25 @@
+# GlossAI Mathematical Examples
+# This file demonstrates basic mathematical operations
+
+# Basic arithmetic
+x = 10
+y = 20
+print "x =", x
+print "y =", y
+print "x + y =", x + y
+print "x * y =", x * y
+
+# Trigonometry
+angle = pi / 4
+print "sin(pi/4) =", sin(angle)
+print "cos(pi/4) =", cos(angle)
+
+# Loops
+print "Counting from 1 to 5:"
+i = 1
+while (i <= 5) { print "i =", i; i = i + 1; }
+
+# Conditional logic
+score = 85
+result = if (score >= 80) "pass" else "fail"
+print "Score:", score, "Result:", result

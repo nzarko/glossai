@@ -1,0 +1,5 @@
+print "Fibonacci sequence:"
+a = 0
+b = 1
+n = 1
+while (n <= 10) { print "F(", n, ") =", a; temp = a + b; a = b; b = temp; n = n + 1; }

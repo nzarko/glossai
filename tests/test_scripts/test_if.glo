@@ -1,0 +1,4 @@
+# Test conditional
+score = 85
+result = if (score >= 80) "pass" else "fail"
+print "Result:", result

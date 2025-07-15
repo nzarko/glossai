@@ -1,0 +1,6 @@
+# Simple math test
+x = 10
+y = 20
+print "x + y =", x + y
+angle = pi / 4
+print "sin(pi/4) =", sin(angle)

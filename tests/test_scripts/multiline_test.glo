@@ -1,0 +1,6 @@
+print "Testing multi-line support"
+x = 5
+if (x > 0) { print "x is positive:", x; } else { print "x is not positive"; }
+i = 0
+while (i < 3) { print "i =", i; i = i + 1; }
+print "Done!"

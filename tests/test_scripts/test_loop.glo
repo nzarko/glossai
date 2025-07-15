@@ -1,0 +1,5 @@
+# Test loop
+a = 0
+b = 1
+n = 1
+while (n <= 3) { print "F(", n, ") =", a; n = n + 1; }

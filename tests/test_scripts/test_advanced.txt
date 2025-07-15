@@ -1,0 +1,7 @@
+radius=5
+area=pi*radius^2
+circumference=2*pi*radius
+area
+circumference
+log(10)
+quit

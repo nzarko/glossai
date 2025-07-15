@@ -1,0 +1,7 @@
+i = 1
+print "Initial i: ", i
+i = i + 1
+print "After increment: ", i
+{ i = i + 1; print "In block: ", i }
+print "After block: ", i
+quit
