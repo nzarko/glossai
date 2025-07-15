@@ -134,3 +134,53 @@ Value* Context::findVariable(const std::string &name) const
     }
     return nullptr;
 }
+
+// Line parsing functionality
+void Context::addPendingLine(const std::string &line)
+{
+    m_pendingLines.push_back(line);
+}
+
+std::string Context::getPendingCode() const
+{
+    std::string result;
+    for (size_t i = 0; i < m_pendingLines.size(); ++i) {
+        if (i > 0) result += "\n";
+        result += m_pendingLines[i];
+    }
+    return result;
+}
+
+void Context::clearPendingLines()
+{
+    m_pendingLines.clear();
+}
+
+bool Context::hasPendingLines() const
+{
+    return !m_pendingLines.empty();
+}
+
+int Context::getBraceLevel() const
+{
+    int level = 0;
+    for (const auto &line : m_pendingLines) {
+        for (char c : line) {
+            if (c == '{') level++;
+            else if (c == '}') level--;
+        }
+    }
+    return level;
+}
+
+int Context::getParenLevel() const
+{
+    int level = 0;
+    for (const auto &line : m_pendingLines) {
+        for (char c : line) {
+            if (c == '(') level++;
+            else if (c == ')') level--;
+        }
+    }
+    return level;
+}

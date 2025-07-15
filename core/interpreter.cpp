@@ -16,28 +16,46 @@ Interpreter::Interpreter()
 
 Interpreter::~Interpreter() = default;
 
+// filepath: f:\sources\qt_prjs\glossai\core\interpreter.cpp
 std::string Interpreter::execute(const std::string &code)
 {
     try {
         m_lastError.clear();
-        
-        // Tokenize the input
+
+        // Tokenize
         auto tokens = m_lexer->tokenize(code);
-        
-        // Parse into AST
+
+        // Parse
         auto ast = m_parser->parse(tokens);
+
         if (!ast) {
-            m_lastError = "Parse error: Invalid syntax";
-            return std::string();
+            m_lastError = m_parser->getLastError();
+            return "";
         }
-        
-        // Evaluate the AST
+
+        // Check if this is a statement that shouldn't show output
+        if (dynamic_cast<PrintNode *>(ast.get()) || 
+            dynamic_cast<BlockNode *>(ast.get()) ||
+            dynamic_cast<WhileNode *>(ast.get()) ||
+            dynamic_cast<ForNode *>(ast.get()) ||
+            dynamic_cast<IfNode *>(ast.get())) {
+            // For statements that don't need output, just evaluate and return empty string
+            m_evaluator->evaluate(ast.get(), m_context.get());
+            return ""; // Don't show result
+        }
+
+        // Evaluate normally for other expressions
         auto result = m_evaluator->evaluate(ast.get(), m_context.get());
+
+        // Return result as string
         return result.toString();
-        
+
     } catch (const std::exception &e) {
-        m_lastError = std::string("Runtime error: ") + e.what();
-        return std::string();
+        m_lastError = e.what();
+        return "";
+    } catch (...) {
+        m_lastError = "Unknown error occurred during execution";
+        return "";
     }
 }
 
@@ -83,4 +101,24 @@ void Interpreter::clearContext()
 std::vector<std::string> Interpreter::getAvailableIdentifiers() const
 {
     return m_context->getIdentifiers();
+}
+
+std::vector<std::string> Interpreter::getBuiltinFunctions() const
+{
+    return {
+        // Trigonometric functions
+        "sin", "cos", "tan", "asin", "acos", "atan",
+        
+        // Logarithmic functions  
+        "log", "log10", "log2", "ln", "exp",
+        
+        // Root functions
+        "sqrt", "cbrt", "root",
+        
+        // Power and exponential
+        "pow", "abs",
+        
+        // Utility functions
+        "min", "max", "ceil", "floor", "round"
+    };
 }

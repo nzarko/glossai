@@ -12,6 +12,8 @@ add_library(glossai_core STATIC
     evaluator.cpp
     context.h
     context.cpp
+    lineparser.h
+    lineparser.cpp
 )
 
 target_include_directories(glossai_core 

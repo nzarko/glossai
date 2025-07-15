@@ -127,11 +127,48 @@ public:
      */
     std::unordered_map<std::string, UserFunction> getFunctions() const;
 
+    // Line parsing functionality
+    /**
+     * @brief Add a line to the pending code buffer
+     * @param line Line to add
+     */
+    void addPendingLine(const std::string &line);
+    
+    /**
+     * @brief Get the accumulated pending code
+     * @return Combined pending lines
+     */
+    std::string getPendingCode() const;
+    
+    /**
+     * @brief Clear all pending lines
+     */
+    void clearPendingLines();
+    
+    /**
+     * @brief Check if there are pending lines
+     * @return True if there are pending lines
+     */
+    bool hasPendingLines() const;
+    
+    /**
+     * @brief Get the current brace nesting level
+     * @return Brace level (positive = unclosed braces)
+     */
+    int getBraceLevel() const;
+    
+    /**
+     * @brief Get the current parenthesis nesting level
+     * @return Parenthesis level (positive = unclosed parentheses)
+     */
+    int getParenLevel() const;
+
 private:
     using VariableScope = std::unordered_map<std::string, Value>;
     
     std::vector<VariableScope> m_variableScopes;
     std::unordered_map<std::string, UserFunction> m_functions;
+    std::vector<std::string> m_pendingLines;  // For multi-line parsing
     
     // Helper methods
     Value* findVariable(const std::string &name) const;

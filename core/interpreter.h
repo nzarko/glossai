@@ -61,6 +61,12 @@ public:
      */
     std::vector<std::string> getAvailableIdentifiers() const;
 
+    /**
+     * @brief Get list of available built-in functions
+     * @return Vector of built-in function names
+     */
+    std::vector<std::string> getBuiltinFunctions() const;
+
 private:
     std::unique_ptr<Lexer> m_lexer;
     std::unique_ptr<Parser> m_parser;
