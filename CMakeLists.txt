@@ -29,8 +29,12 @@ add_subdirectory(core)
 add_subdirectory(ui)
 add_subdirectory(tests)
 
-# Main executable
-add_executable(glossai main.cpp)
+# Main GUI executable
+if(WIN32)
+    add_executable(glossai main.cpp glossai.rc)
+else()
+    add_executable(glossai main.cpp)
+endif()
 
 target_link_libraries(glossai
     PRIVATE
@@ -40,12 +44,38 @@ target_link_libraries(glossai
     Qt6::Widgets
 )
 
-# Set output directory
-set_target_properties(glossai PROPERTIES
+# Command-line executable (no Qt dependencies)
+if(WIN32)
+    add_executable(glossai_cmd cmd_main.cpp glossai_cmd.rc)
+else()
+    add_executable(glossai_cmd cmd_main.cpp)
+endif()
+
+target_link_libraries(glossai_cmd
+    PRIVATE
+    glossai_core
+)
+
+# Set output directory for both executables
+set_target_properties(glossai glossai_cmd PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 
 # Installation
-install(TARGETS glossai
+install(TARGETS glossai glossai_cmd
     RUNTIME DESTINATION bin
 )
+
+# Add after your executable definitions
+
+# if(WIN32)
+#     # Find Qt installation path
+#     get_target_property(QT_QMAKE_EXECUTABLE Qt6::qmake IMPORTED_LOCATION)
+#     get_filename_component(QT_WINDEPLOYQT_EXECUTABLE ${QT_QMAKE_EXECUTABLE} PATH)
+#     set(QT_WINDEPLOYQT_EXECUTABLE "${QT_WINDEPLOYQT_EXECUTABLE}/windeployqt.exe")
+
+#     # Deploy Qt libraries for the GUI application
+#     add_custom_command(TARGET glossai POST_BUILD
+#         COMMAND ${QT_WINDEPLOYQT_EXECUTABLE} --qmldir ${CMAKE_SOURCE_DIR} $<TARGET_FILE:glossai>
+#         COMMENT "Deploying Qt libraries")
+# endif()

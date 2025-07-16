@@ -88,22 +88,23 @@ public:
     virtual void visit(class BlockNode *node) = 0;
     virtual void visit(class FunctionDefNode *node) = 0;
     virtual void visit(class ReturnNode *node) = 0;
+    virtual void visit(class PrintNode *node) = 0; 
 };
 
 /**
  * @brief Binary operators
  */
 enum class BinaryOperator {
-    Add, Subtract, Multiply, Divide, Power,
+    Add, Subtract, Multiply, Divide, Power, Mod, Div,
     Equal, NotEqual, Less, Greater, LessEqual, GreaterEqual,
-    And, Or, Assign
+    And, Or, Assign, PlusAssign, MinusAssign, MultiplyAssign, DivideAssign
 };
 
 /**
  * @brief Unary operators
  */
 enum class UnaryOperator {
-    Negate, Not
+    Negate, Not, PreIncrement, PostIncrement, PreDecrement, PostDecrement
 };
 
 /**
@@ -208,15 +209,22 @@ private:
 class IfNode : public ASTNode
 {
 public:
-    IfNode(std::unique_ptr<ASTNode> condition, std::unique_ptr<ASTNode> thenBranch, std::unique_ptr<ASTNode> elseBranch = nullptr)
-        : m_condition(std::move(condition)), m_thenBranch(std::move(thenBranch)), m_elseBranch(std::move(elseBranch)) {}
-    
+    IfNode(std::unique_ptr<ASTNode> condition,
+           std::unique_ptr<ASTNode> thenBranch,
+           std::unique_ptr<ASTNode> elseBranch = nullptr)
+        : m_condition(std::move(condition))
+        , m_thenBranch(std::move(thenBranch))
+        , m_elseBranch(std::move(elseBranch))
+    {}
+
     void accept(ASTVisitor *visitor) override { visitor->visit(this); }
+
     std::string toString() const override;
     
-    ASTNode* getCondition() const { return m_condition.get(); }
-    ASTNode* getThenBranch() const { return m_thenBranch.get(); }
-    ASTNode* getElseBranch() const { return m_elseBranch.get(); }
+
+    ASTNode *getCondition() const { return m_condition.get(); }
+    ASTNode *getThenBranch() const { return m_thenBranch.get(); }
+    ASTNode *getElseBranch() const { return m_elseBranch.get(); }
 
 private:
     std::unique_ptr<ASTNode> m_condition;
@@ -326,4 +334,23 @@ public:
 
 private:
     std::unique_ptr<ASTNode> m_value;
+};
+
+
+/**
+ * @brief Print statement node
+ */
+class PrintNode : public ASTNode
+{
+public:
+    explicit PrintNode(std::vector<std::unique_ptr<ASTNode>> expressions)
+        : m_expressions(std::move(expressions)) {}
+    
+    void accept(ASTVisitor *visitor) override { visitor->visit(this); }
+    std::string toString() const override;
+    
+    const std::vector<std::unique_ptr<ASTNode>>& getExpressions() const { return m_expressions; }
+
+private:
+    std::vector<std::unique_ptr<ASTNode>> m_expressions;
 };

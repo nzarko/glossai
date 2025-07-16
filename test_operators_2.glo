@@ -1,0 +1,12 @@
+x = 10
+print "Initial x =", x
+x--
+print "After x--, x =", x
+--x
+print "After --x, x =", x
+z = 20
+z -= 5
+print "z -= 5, z =", z
+z += 3
+print "z += 3, z =", z
+quit

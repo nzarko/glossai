@@ -3,6 +3,7 @@
 #include <sstream>
 #include <algorithm>
 #include <stdexcept>
+#include <cmath>
 
 // Value implementation
 double Value::toNumber() const {
@@ -31,18 +32,25 @@ bool Value::toBool() const {
     return false;
 }
 
-std::string Value::toString() const {
+std::string Value::toString() const
+{
     switch (m_type) {
-    case String: return m_string;
     case Number: {
-        std::ostringstream oss;
-        oss << m_number;
-        return oss.str();
+        double val = m_number;
+        // Check if it's a whole number
+        if (val == static_cast<double>(static_cast<long long>(val))) {
+            return std::to_string(static_cast<long long>(val));
+        }
+        return std::to_string(val);
     }
-    case Boolean: return m_boolean ? "true" : "false";
-    case Null: return "null";
+    case String:
+        return m_string;
+    case Boolean:
+        return m_boolean ? "true" : "false";
+    case Null:
+    default:
+        return "";
     }
-    return "";
 }
 
 bool Value::operator==(const Value& other) const {
@@ -68,11 +76,16 @@ bool Value::operator<(const Value& other) const {
     return toNumber() < other.toNumber();
 }
 
-Value Value::operator+(const Value& other) const {
-    if (m_type == String || other.m_type == String) {
-        return Value(toString() + other.toString());
+Value Value::operator+(const Value &other) const
+{
+    try {
+        if (m_type == String || other.m_type == String) {
+            return Value(toString() + other.toString());
+        }
+        return Value(toNumber() + other.toNumber());
+    } catch (const std::exception &e) {
+        throw std::runtime_error("Error in addition operation: " + std::string(e.what()));
     }
-    return Value(toNumber() + other.toNumber());
 }
 
 Value Value::operator-(const Value& other) const {
@@ -108,7 +121,11 @@ std::string BinaryOpNode::toString() const
         {BinaryOperator::GreaterEqual, ">="},
         {BinaryOperator::And, "and"},
         {BinaryOperator::Or, "or"},
-        {BinaryOperator::Assign, "="}
+        {BinaryOperator::Assign, "="},
+        {BinaryOperator::PlusAssign, "+="},
+        {BinaryOperator::MinusAssign, "-="},
+        {BinaryOperator::MultiplyAssign, "*="},
+        {BinaryOperator::DivideAssign, "/="}
     };
     
     auto it = opStrings.find(m_operator);
@@ -121,7 +138,11 @@ std::string UnaryOpNode::toString() const
 {
     static const std::unordered_map<UnaryOperator, std::string> opStrings = {
         {UnaryOperator::Negate, "-"},
-        {UnaryOperator::Not, "not"}
+        {UnaryOperator::Not, "not"},
+        {UnaryOperator::PreIncrement, "++"},
+        {UnaryOperator::PostIncrement, "++"},
+        {UnaryOperator::PreDecrement, "--"},
+        {UnaryOperator::PostDecrement, "--"}
     };
     
     auto it = opStrings.find(m_operator);
@@ -191,4 +212,14 @@ std::string ReturnNode::toString() const
         return "return " + m_value->toString();
     }
     return "return";
+}
+
+std::string PrintNode::toString() const
+{
+    std::string result = "print ";
+    for (size_t i = 0; i < m_expressions.size(); ++i) {
+        if (i > 0) result += ", ";
+        result += m_expressions[i]->toString();
+    }
+    return result;
 }

@@ -1,0 +1,46 @@
+print "=== C++ Style Operators Demo ==="
+print ""
+
+print "1. Increment/Decrement Operators:"
+x = 5
+print "x =", x
+print "x++ =", x++, ", x is now", x
+print "++x =", ++x, ", x is now", x
+print "x-- =", x--, ", x is now", x
+print "--x =", --x, ", x is now", x
+print ""
+
+print "2. Compound Assignment Operators:"
+y = 10
+print "y =", y
+y += 5
+print "y += 5, y =", y
+y -= 3
+print "y -= 3, y =", y
+y *= 2
+print "y *= 2, y =", y
+y /= 4
+print "y /= 4, y =", y
+print ""
+
+print "3. In Control Flow:"
+counter = 0
+print "Counting from 0 to 3:"
+while (counter < 3) {
+    print "counter =", counter++
+}
+print ""
+
+print "4. Loop with compound assignment:"
+sum = 0
+i = 1
+while (i <= 5) {
+    sum += i
+    print "i =", i, ", sum =", sum
+    i++
+}
+print "Final sum =", sum
+print ""
+
+print "Demo complete!"
+quit

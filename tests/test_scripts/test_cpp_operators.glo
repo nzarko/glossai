@@ -1,0 +1,38 @@
+# Test script for C++ style operators
+# This script demonstrates the new operators
+
+# Basic increment/decrement
+x = 5
+print "Initial x =", x
+x++
+print "After x++, x =", x
+++x
+print "After ++x, x =", x
+
+# Compound assignment
+y = 10
+print "Initial y =", y
+y += 5
+print "After y += 5, y =", y
+y -= 3
+print "After y -= 3, y =", y
+y *= 2
+print "After y *= 2, y =", y
+y /= 4
+print "After y /= 4, y =", y
+
+# Pre vs post increment demonstration
+a = 1
+b = a++
+print "a =", a, ", b = a++ =", b
+c = ++a
+print "a =", a, ", c = ++a =", c
+
+# Pre vs post decrement demonstration
+d = 10
+e = d--
+print "d =", d, ", e = d-- =", e
+f = --d
+print "d =", d, ", f = --d =", f
+
+print "Test completed successfully!"

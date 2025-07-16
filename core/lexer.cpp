@@ -2,6 +2,7 @@
 #include <unordered_map>
 #include <cctype>
 #include <algorithm>
+#include <stdexcept>
 
 Lexer::Lexer()
     : m_position(0)
@@ -65,39 +66,36 @@ Token Lexer::readNumber()
 
 Token Lexer::readString()
 {
-    char quote = m_currentChar;
-    std::string string;
     int startLine = m_currentLine;
     int startColumn = m_currentColumn;
     
     advance(); // Skip opening quote
+    std::string value;
     
-    while (m_currentChar != '\0' && m_currentChar != quote) {
+    while (m_currentChar != '"' && m_currentChar != '\0') {
         if (m_currentChar == '\\') {
             advance();
-            if (m_currentChar != '\0') {
-                switch (m_currentChar) {
-                case 'n': string += '\n'; break;
-                case 't': string += '\t'; break;
-                case 'r': string += '\r'; break;
-                case '\\': string += '\\'; break;
-                case '"': string += '"'; break;
-                case '\'': string += '\''; break;
-                default: string += m_currentChar; break;
-                }
-                advance();
+            switch (m_currentChar) {
+            case 'n': value += '\n'; break;
+            case 't': value += '\t'; break;
+            case 'r': value += '\r'; break;
+            case '\\': value += '\\'; break;
+            case '"': value += '"'; break;
+            default: value += m_currentChar; break;
             }
         } else {
-            string += m_currentChar;
-            advance();
+            value += m_currentChar;
         }
+        advance();
     }
     
-    if (m_currentChar == quote) {
+    if (m_currentChar == '"') {
         advance(); // Skip closing quote
+    } else {
+        throw std::runtime_error("Unterminated string literal");
     }
     
-    return Token(TokenType::String, string, startLine, startColumn);
+    return Token(TokenType::String, value, startLine, startColumn);
 }
 
 Token Lexer::readIdentifier()
@@ -105,34 +103,58 @@ Token Lexer::readIdentifier()
     std::string identifier;
     int startLine = m_currentLine;
     int startColumn = m_currentColumn;
-    
+
     while (isAlphaNumeric(m_currentChar) || m_currentChar == '_') {
         identifier += m_currentChar;
         advance();
     }
-    
-    // Check for keywords
-    static const std::unordered_map<std::string, TokenType> keywords = {
-        {"if", TokenType::If},
-        {"else", TokenType::Else},
-        {"while", TokenType::While},
-        {"for", TokenType::For},
-        {"function", TokenType::Function},
-        {"return", TokenType::Return},
-        {"true", TokenType::True},
-        {"false", TokenType::False},
-        {"and", TokenType::And},
-        {"or", TokenType::Or},
-        {"not", TokenType::Not}
-    };
-    
-    // Convert to lowercase for case-insensitive keyword matching
+
+    // Convert to lowercase for case-insensitive matching
     std::string lowerIdentifier = identifier;
-    std::transform(lowerIdentifier.begin(), lowerIdentifier.end(), lowerIdentifier.begin(), ::tolower);
-    
+    std::transform(lowerIdentifier.begin(),
+                   lowerIdentifier.end(),
+                   lowerIdentifier.begin(),
+                   ::tolower);
+
+    // Mathematical constants - convert directly to numbers
+    static const std::unordered_map<std::string, std::string> constants = {
+        {"pi", "3.14159265358979323846"},
+        {"e", "2.71828182845904523536"},
+        {"tau", "6.28318530717958647692"},   // tau = 2*pi
+        {"phi", "1.61803398874989484820"},   // Golden ratio
+        {"sqrt2", "1.41421356237309504880"}, // √2
+        {"sqrt3", "1.73205080756887729353"}, // √3
+        {"ln2", "0.69314718055994530942"},   // ln(2)
+        {"ln10", "2.30258509299404568402"}   // ln(10)
+    };
+
+    auto constIt = constants.find(lowerIdentifier);
+    if (constIt != constants.end()) {
+        return Token(TokenType::Number, constIt->second, startLine, startColumn);
+    }
+
+    // Check for keywords
+    static const std::unordered_map<std::string, TokenType> keywords = {{"if", TokenType::If},
+                                                                        {"else", TokenType::Else},
+                                                                        {"while", TokenType::While},
+                                                                        {"for", TokenType::For},
+                                                                        {"function",
+                                                                         TokenType::Function},
+                                                                        {"procedure", TokenType::Procedure},
+                                                                        {"return",
+                                                                         TokenType::Return},
+                                                                        {"print", TokenType::Print},
+                                                                        {"true", TokenType::True},
+                                                                        {"false", TokenType::False},
+                                                                        {"and", TokenType::And},
+                                                                        {"or", TokenType::Or},
+                                                                        {"not", TokenType::Not},
+                                                                        {"mod", TokenType::Mod},
+                                                                        {"div", TokenType::Div}};
+
     auto it = keywords.find(lowerIdentifier);
     TokenType type = (it != keywords.end()) ? it->second : TokenType::Identifier;
-    
+
     return Token(type, identifier, startLine, startColumn);
 }
 
@@ -145,15 +167,44 @@ Token Lexer::readOperator()
     advance();
     
     switch (current) {
-    case '+': return Token(TokenType::Plus, "+", startLine, startColumn);
-    case '-': return Token(TokenType::Minus, "-", startLine, startColumn);
+    case '+': 
+        if (m_currentChar == '+') {
+            advance();
+            return Token(TokenType::Increment, "++", startLine, startColumn);
+        }
+        if (m_currentChar == '=') {
+            advance();
+            return Token(TokenType::PlusAssign, "+=", startLine, startColumn);
+        }
+        return Token(TokenType::Plus, "+", startLine, startColumn);
+    case '-': 
+        if (m_currentChar == '-') {
+            advance();
+            return Token(TokenType::Decrement, "--", startLine, startColumn);
+        }
+        if (m_currentChar == '=') {
+            advance();
+            return Token(TokenType::MinusAssign, "-=", startLine, startColumn);
+        }
+        return Token(TokenType::Minus, "-", startLine, startColumn);
     case '*': 
         if (m_currentChar == '*') {
             advance();
             return Token(TokenType::Power, "**", startLine, startColumn);
         }
+        if (m_currentChar == '=') {
+            advance();
+            return Token(TokenType::MultiplyAssign, "*=", startLine, startColumn);
+        }
         return Token(TokenType::Multiply, "*", startLine, startColumn);
-    case '/': return Token(TokenType::Divide, "/", startLine, startColumn);
+    case '/': 
+        if (m_currentChar == '=') {
+            advance();
+            return Token(TokenType::DivideAssign, "/=", startLine, startColumn);
+        }
+        return Token(TokenType::Divide, "/", startLine, startColumn);
+    case '^': return Token(TokenType::Power, "^", startLine, startColumn);
+    case '%': return Token(TokenType::Mod, "%", startLine, startColumn);
     case '=':
         if (m_currentChar == '=') {
             advance();

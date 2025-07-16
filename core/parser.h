@@ -47,14 +47,17 @@ private:
     std::unique_ptr<ASTNode> parseTerm();
     std::unique_ptr<ASTNode> parseFactor();
     std::unique_ptr<ASTNode> parseUnary();
+    std::unique_ptr<ASTNode> parsePostfix();
     std::unique_ptr<ASTNode> parsePower();
     std::unique_ptr<ASTNode> parsePrimary();
     std::unique_ptr<ASTNode> parseCall();
     
     // Control flow
     std::unique_ptr<ASTNode> parseIfStatement();
+    std::unique_ptr<ASTNode> parseIfExpression();
     std::unique_ptr<ASTNode> parseWhileStatement();
     std::unique_ptr<ASTNode> parseForStatement();
+    std::unique_ptr<ASTNode> parsePrintStatement();
     std::unique_ptr<ASTNode> parseBlock();
     
     // Function definitions

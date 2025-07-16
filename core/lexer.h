@@ -19,6 +19,18 @@ enum class TokenType {
     Divide,
     Power,
     Assign,
+    Mod,
+    Div,
+    
+    // Compound assignment operators
+    PlusAssign,     // +=
+    MinusAssign,    // -=
+    MultiplyAssign, // *=
+    DivideAssign,   // /=
+    
+    // Increment/decrement operators
+    Increment,      // ++
+    Decrement,      // --
     
     // Comparison
     Equal,
@@ -47,7 +59,9 @@ enum class TokenType {
     While,
     For,
     Function,
+    Procedure,
     Return,
+    Print,
     True,
     False,
     

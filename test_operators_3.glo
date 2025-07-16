@@ -1,0 +1,12 @@
+x = 5
+print "x =", x
+y = x++
+print "y = x++: x =", x, "y =", y
+z = ++x
+print "z = ++x: x =", x, "z =", z
+a = 10
+b = a--
+print "b = a--: a =", a, "b =", b
+c = --a
+print "c = --a: a =", a, "c =", c
+quit

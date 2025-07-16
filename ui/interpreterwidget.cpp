@@ -381,30 +381,65 @@ void InterpreterWidget::saveSession()
 
 void InterpreterWidget::showHelp()
 {
-    QMessageBox::information(this, "GlossAI Help",
-        "GlossAI Mathematical Expression Interpreter\n\n"
-        "Basic Operations:\n"
-        "• +, -, *, / : Basic arithmetic\n"
-        "• ** : Exponentiation (2**3 = 8)\n"
-        "• () : Grouping expressions\n\n"
-        "Mathematical Functions:\n"
-        "• sqrt(x) : Square root\n"
-        "• pow(x, y) : x raised to power y\n"
-        "• abs(x) : Absolute value\n"
-        "• sin(x), cos(x), tan(x) : Trigonometric\n"
-        "• log(x) : Natural logarithm\n"
-        "• exp(x) : e raised to power x\n"
-        "• floor(x), ceil(x), round(x)\n"
-        "• min(a,b,...), max(a,b,...)\n\n"
-        "Variables:\n"
-        "• x = 5 : Assign value to variable\n"
-        "• Use variables in expressions\n\n"
-        "Examples:\n"
-        "• 2 + 3 * 4\n"
-        "• sqrt(16) + pow(2, 3)\n"
-        "• x = 10; y = x * 2\n"
-        "• sin(3.14159/2)"
-    );
+    QMessageBox::information(this,
+                             "GlossAI Help",
+                             "GlossAI Mathematical Expression Interpreter\n\n"
+                             "Basic Operations:\n"
+                             "• +, -, *, / : Basic arithmetic\n"
+                             "• ^, ** : Exponentiation (2^3 or 2**3 = 8)\n"
+                             "• MOD, % : Modulo operation (remainder)\n"
+                             "• DIV : Integer division\n"
+                             "• () : Grouping expressions\n"
+                             "• = : Variable assignment (x = 5)\n\n"
+
+                             "Control Flow:\n"
+                             "• if (condition) expression\n"
+                             "• if (condition) expr1 else expr2\n"
+                             "• Comparison: ==, !=, <, >, <=, >=\n\n"
+
+                             "Trigonometric Functions:\n"
+                             "• sin(x), cos(x), tan(x) : Basic trigonometry\n"
+                             "• asin(x), acos(x), atan(x) : Inverse trigonometry\n\n"
+
+                             "Logarithmic Functions:\n"
+                             "• log(x) : Natural logarithm (ln)\n"
+                             "• log10(x) : Base-10 logarithm\n"
+                             "• log2(x) : Base-2 logarithm\n"
+                             "• exp(x) : e raised to power x\n\n"
+
+                             "Root & Power Functions:\n"
+                             "• sqrt(x) : Square root\n"
+                             "• cbrt(x) : Cube root\n"
+                             "• root(n,x) : nth root of x\n"
+                             "• pow(x,y) : x raised to power y\n\n"
+
+                             "Utility Functions:\n"
+                             "• abs(x) : Absolute value\n"
+                             "• min(x,y) : Minimum of two values\n"
+                             "• max(x,y) : Maximum of two values\n"
+                             "• ceil(x), floor(x), round(x) : Rounding\n\n"
+
+                             "Mathematical Constants:\n"
+                             "• pi : π (3.14159...)\n"
+                             "• e : Euler's number (2.71828...)\n"
+                             "• tau : 2π (6.28318...)\n"
+                             "• phi : Golden ratio (1.61803...)\n"
+                             "• sqrt2, sqrt3 : √2, √3\n"
+                             "• ln2, ln10 : ln(2), ln(10)\n\n"
+
+                             "Variables:\n"
+                             "• x = 5 : Assign value to variable\n"
+                             "• Use variables in expressions\n\n"
+
+                             "Examples:\n"
+                             "• 2 + 3 * 4 = 14\n"
+                             "• 17 MOD 5 = 2 (remainder)\n"
+                             "• 17 DIV 5 = 3 (integer division)\n"
+                             "• if (x > 10) x * 2 else x\n"
+                             "• sin(pi/2) = 1\n"
+                             "• root(3, 27) = 3\n"
+                             "• x = 10; y = x^2 + 1\n"
+                             "• log(e) = 1");
 }
 
 void InterpreterWidget::onInputReturnPressed()

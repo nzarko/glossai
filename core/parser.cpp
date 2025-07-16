@@ -22,8 +22,9 @@ std::unique_ptr<ASTNode> Parser::parse(const std::vector<Token> &tokens)
 
 Token Parser::currentToken() const
 {
-    if (isAtEnd()) {
-        return m_tokens.back(); // Should be EndOfFile token
+    if (m_current >= m_tokens.size()) {
+        // Return safe default with proper Token constructor parameters
+        return Token{TokenType::EndOfFile, "", 0, 0}; // type, value, line, column
     }
     return m_tokens[m_current];
 }
@@ -65,26 +66,27 @@ bool Parser::consume(TokenType type, const std::string &errorMessage)
 
 std::unique_ptr<ASTNode> Parser::parseStatement()
 {
-    if (match(TokenType::If)) {
+    if (currentToken().type == TokenType::If) {
         return parseIfStatement();
     }
-    if (match(TokenType::While)) {
+
+    if (currentToken().type == TokenType::While) {
         return parseWhileStatement();
     }
-    if (match(TokenType::For)) {
-        return parseForStatement();
+
+    if (currentToken().type == TokenType::Print) {
+        return parsePrintStatement();
     }
-    if (match(TokenType::Function)) {
-        return parseFunctionDeclaration();
-    }
-    if (match(TokenType::Return)) {
-        return parseReturnStatement();
-    }
-    if (match(TokenType::LeftBrace)) {
+
+    if (currentToken().type == TokenType::LeftBrace) {
         return parseBlock();
     }
+
+    // Otherwise, parse as expression statement
+    auto expr = parseExpression();
     
-    return parseExpression();
+    // Don't consume semicolon here either, let parseBlock handle it
+    return expr;
 }
 
 std::unique_ptr<ASTNode> Parser::parseExpression()
@@ -99,6 +101,26 @@ std::unique_ptr<ASTNode> Parser::parseAssignment()
     if (match(TokenType::Assign)) {
         auto value = parseAssignment();
         return std::make_unique<BinaryOpNode>(std::move(expr), BinaryOperator::Assign, std::move(value));
+    }
+    
+    if (match(TokenType::PlusAssign)) {
+        auto value = parseAssignment();
+        return std::make_unique<BinaryOpNode>(std::move(expr), BinaryOperator::PlusAssign, std::move(value));
+    }
+    
+    if (match(TokenType::MinusAssign)) {
+        auto value = parseAssignment();
+        return std::make_unique<BinaryOpNode>(std::move(expr), BinaryOperator::MinusAssign, std::move(value));
+    }
+    
+    if (match(TokenType::MultiplyAssign)) {
+        auto value = parseAssignment();
+        return std::make_unique<BinaryOpNode>(std::move(expr), BinaryOperator::MultiplyAssign, std::move(value));
+    }
+    
+    if (match(TokenType::DivideAssign)) {
+        auto value = parseAssignment();
+        return std::make_unique<BinaryOpNode>(std::move(expr), BinaryOperator::DivideAssign, std::move(value));
     }
     
     return expr;
@@ -188,16 +210,35 @@ std::unique_ptr<ASTNode> Parser::parseTerm()
 std::unique_ptr<ASTNode> Parser::parseFactor()
 {
     auto expr = parseUnary();
-    
-    while (currentToken().type == TokenType::Multiply || currentToken().type == TokenType::Divide) {
+
+    while (currentToken().type == TokenType::Multiply || currentToken().type == TokenType::Divide
+           || currentToken().type == TokenType::Mod || currentToken().type == TokenType::Div) {
         TokenType op = currentToken().type;
         advance();
         auto right = parseUnary();
-        
-        BinaryOperator binOp = (op == TokenType::Multiply) ? BinaryOperator::Multiply : BinaryOperator::Divide;
+
+        BinaryOperator binOp;
+        switch (op) {
+        case TokenType::Multiply:
+            binOp = BinaryOperator::Multiply;
+            break;
+        case TokenType::Divide:
+            binOp = BinaryOperator::Divide;
+            break;
+        case TokenType::Mod:
+            binOp = BinaryOperator::Mod;
+            break;
+        case TokenType::Div:
+            binOp = BinaryOperator::Div;
+            break;
+        default:
+            binOp = BinaryOperator::Multiply; // fallback
+            break;
+        }
+
         expr = std::make_unique<BinaryOpNode>(std::move(expr), binOp, std::move(right));
     }
-    
+
     return expr;
 }
 
@@ -212,7 +253,38 @@ std::unique_ptr<ASTNode> Parser::parseUnary()
         return std::make_unique<UnaryOpNode>(unOp, std::move(expr));
     }
     
-    return parsePower();
+    // Handle prefix increment/decrement
+    if (currentToken().type == TokenType::Increment) {
+        advance();
+        auto expr = parseUnary();
+        return std::make_unique<UnaryOpNode>(UnaryOperator::PreIncrement, std::move(expr));
+    }
+    
+    if (currentToken().type == TokenType::Decrement) {
+        advance();
+        auto expr = parseUnary();
+        return std::make_unique<UnaryOpNode>(UnaryOperator::PreDecrement, std::move(expr));
+    }
+    
+    return parsePostfix();
+}
+
+std::unique_ptr<ASTNode> Parser::parsePostfix()
+{
+    auto expr = parsePower();
+    
+    // Handle postfix increment/decrement
+    if (currentToken().type == TokenType::Increment) {
+        advance();
+        return std::make_unique<UnaryOpNode>(UnaryOperator::PostIncrement, std::move(expr));
+    }
+    
+    if (currentToken().type == TokenType::Decrement) {
+        advance();
+        return std::make_unique<UnaryOpNode>(UnaryOperator::PostDecrement, std::move(expr));
+    }
+    
+    return expr;
 }
 
 std::unique_ptr<ASTNode> Parser::parsePower()
@@ -249,14 +321,6 @@ std::unique_ptr<ASTNode> Parser::parseCall()
 
 std::unique_ptr<ASTNode> Parser::parsePrimary()
 {
-    if (match(TokenType::True)) {
-        return std::make_unique<LiteralNode>(Value(true));
-    }
-    
-    if (match(TokenType::False)) {
-        return std::make_unique<LiteralNode>(Value(false));
-    }
-    
     if (currentToken().type == TokenType::Number) {
         std::string value = currentToken().value;
         advance();
@@ -272,7 +336,37 @@ std::unique_ptr<ASTNode> Parser::parsePrimary()
     if (currentToken().type == TokenType::Identifier) {
         std::string name = currentToken().value;
         advance();
+        
+        // Check for function call
+        if (currentToken().type == TokenType::LeftParen) {
+            advance(); // consume '('
+            std::vector<std::unique_ptr<ASTNode>> args;
+            
+            if (currentToken().type != TokenType::RightParen) {
+                do {
+                    args.push_back(parseExpression());
+                    if (currentToken().type == TokenType::Comma) {
+                        advance();
+                    } else {
+                        break;
+                    }
+                } while (true);
+            }
+            
+            consume(TokenType::RightParen, "Expected ')' after function arguments");
+            
+            // Create IdentifierNode first, then FunctionCallNode
+            auto nameNode = std::make_unique<IdentifierNode>(name);
+            return std::make_unique<FunctionCallNode>(std::move(nameNode), std::move(args));
+        }
+        
         return std::make_unique<IdentifierNode>(name);
+    }
+    
+    // Handle if expressions
+    if (currentToken().type == TokenType::If) {
+        advance(); // consume 'if'
+        return parseIfExpression();
     }
     
     if (match(TokenType::LeftParen)) {
@@ -287,22 +381,50 @@ std::unique_ptr<ASTNode> Parser::parsePrimary()
 
 std::unique_ptr<ASTNode> Parser::parseIfStatement()
 {
+    consume(TokenType::If, "Expected 'if'");
     consume(TokenType::LeftParen, "Expected '(' after 'if'");
     auto condition = parseExpression();
     consume(TokenType::RightParen, "Expected ')' after if condition");
-    
+
     auto thenBranch = parseStatement();
     std::unique_ptr<ASTNode> elseBranch = nullptr;
-    
+
     if (match(TokenType::Else)) {
         elseBranch = parseStatement();
     }
-    
-    return std::make_unique<IfNode>(std::move(condition), std::move(thenBranch), std::move(elseBranch));
+
+    return std::make_unique<IfNode>(std::move(condition),
+                                    std::move(thenBranch),
+                                    std::move(elseBranch));
+}
+
+std::unique_ptr<ASTNode> Parser::parseIfExpression()
+{
+    consume(TokenType::LeftParen, "Expected '(' after 'if'");
+    auto condition = parseExpression();
+    consume(TokenType::RightParen, "Expected ')' after if condition");
+
+    auto thenBranch = parseExpression();
+
+    consume(TokenType::Else, "Expected 'else' in if expression");
+
+    // Check if the else branch is another if statement
+    std::unique_ptr<ASTNode> elseBranch;
+    if (currentToken().type == TokenType::If) {
+        advance();                        // consume 'if'
+        elseBranch = parseIfExpression(); // Recursive call for nested if
+    } else {
+        elseBranch = parseExpression(); // Regular expression
+    }
+
+    return std::make_unique<IfNode>(std::move(condition),
+                                    std::move(thenBranch),
+                                    std::move(elseBranch));
 }
 
 std::unique_ptr<ASTNode> Parser::parseWhileStatement()
 {
+    consume(TokenType::While, "Expected 'while'");
     consume(TokenType::LeftParen, "Expected '(' after 'while'");
     auto condition = parseExpression();
     consume(TokenType::RightParen, "Expected ')' after while condition");
@@ -328,15 +450,46 @@ std::unique_ptr<ASTNode> Parser::parseForStatement()
     return std::make_unique<ForNode>(std::move(init), std::move(condition), std::move(update), std::move(body));
 }
 
+std::unique_ptr<ASTNode> Parser::parsePrintStatement()
+{
+    consume(TokenType::Print, "Expected 'print'");
+    std::vector<std::unique_ptr<ASTNode>> expressions;
+    
+    // Parse comma-separated expressions
+    do {
+        expressions.push_back(parseExpression());
+        
+        if (currentToken().type == TokenType::Comma) {
+            advance(); // consume comma
+        } else {
+            break;
+        }
+    } while (currentToken().type != TokenType::EndOfFile);
+    
+    return std::make_unique<PrintNode>(std::move(expressions));
+}
+
 std::unique_ptr<ASTNode> Parser::parseBlock()
 {
+    consume(TokenType::LeftBrace, "Expected '{'");
+
     std::vector<std::unique_ptr<ASTNode>> statements;
-    
-    while (currentToken().type != TokenType::RightBrace && !isAtEnd()) {
+
+    while (currentToken().type != TokenType::RightBrace
+           && currentToken().type != TokenType::EndOfFile) {
+        
         statements.push_back(parseStatement());
+        
+        // Handle semicolon between statements
+        if (currentToken().type == TokenType::Semicolon) {
+            advance(); // consume semicolon
+        }
+        // If the next token is not '}' and not EOF, and we didn't consume a semicolon,
+        // that might be okay for some statements (like if, while, blocks)
     }
-    
-    consume(TokenType::RightBrace, "Expected '}' after block");
+
+    consume(TokenType::RightBrace, "Expected '}'");
+
     return std::make_unique<BlockNode>(std::move(statements));
 }
 
@@ -374,29 +527,33 @@ std::unique_ptr<ASTNode> Parser::parseReturnStatement()
 
 bool Parser::isAtEnd() const
 {
-    return m_current >= m_tokens.size() || currentToken().type == TokenType::EndOfFile;
+    return m_current >= m_tokens.size()
+           || (m_current < m_tokens.size() && m_tokens[m_current].type == TokenType::EndOfFile);
 }
 
 void Parser::synchronize()
 {
     advance();
-    
+
     while (!isAtEnd()) {
         if (m_tokens[m_current - 1].type == TokenType::Semicolon) {
             return;
         }
-        
+
+        // Add bounds check before accessing currentToken
+        if (m_current >= m_tokens.size()) {
+            break;
+        }
+
         switch (currentToken().type) {
         case TokenType::If:
         case TokenType::While:
         case TokenType::For:
         case TokenType::Function:
-        case TokenType::Return:
             return;
         default:
+            advance();
             break;
         }
-        
-        advance();
     }
 }
